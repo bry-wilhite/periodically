@@ -2,141 +2,117 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Periodic Table Treasure Hunt</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Pac-Man Game</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f0f0f0;
-        }
-        #game-container {
-            margin: 20px auto;
-            max-width: 800px;
-        }
-        #periodic-table {
-            display: grid;
-            grid-template-columns: repeat(18, 40px);
-            gap: 2px;
-            margin: 20px auto;
-            width: fit-content;
-        }
-        .element {
-            width: 40px;
-            height: 40px;
-            background-color: #ddd;
-            border: 1px solid #999;
             display: flex;
-            align-items: center;
             justify-content: center;
-            cursor: pointer;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000;
         }
-        .element:hover {
-            background-color: #ccc;
-        }
-        .correct {
-            background-color: #aaffaa;
-        }
-        .incorrect {
-            background-color: #ffaaaa;
-        }
-        #clue {
-            font-size: 18px;
-            margin: 20px 0;
-        }
-        #score {
-            font-size: 16px;
-            margin: 10px 0;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
+        canvas {
+            border: 1px solid white;
         }
     </style>
 </head>
 <body>
-    <div id="game-container">
-        <h1>Periodic Table Treasure Hunt</h1>
-        <p id="clue">Click "Start Game" to begin!</p>
-        <p id="score">Score: 0</p>
-        <div id="periodic-table"></div>
-        <button onclick="startGame()">Start Game</button>
-    </div>
-
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
     <script>
-        // Simplified periodic table data (element: [symbol, atomic number, clue])
-        const elements = {
-            1: ["H", 1, "I'm the lightest element and fuel stars."],
-            2: ["He", 2, "I make balloons float."],
-            3: ["Li", 3, "I'm used in batteries and have atomic number 3."],
-            6: ["C", 6, "I'm the basis of all life."],
-            8: ["O", 8, "You breathe me every day."],
-            11: ["Na", 11, "I’m in your table salt."],
-            17: ["Cl", 17, "I pair with sodium to season your food."],
-            26: ["Fe", 26, "I’m the core of steel."],
-            79: ["Au", 79, "I’m a precious metal loved by jewelers."]
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let pacman = {
+            x: 200,
+            y: 200,
+            radius: 20,
+            speed: 4,
+            mouthAngle: 0,
+            direction: 0
         };
-
+        
+        let dots = [];
+        for (let i = 0; i < 10; i++) {
+            dots.push({
+                x: Math.random() * 380 + 10,
+                y: Math.random() * 380 + 10,
+                radius: 5
+            });
+        }
+        
         let score = 0;
-        let currentElement = null;
-        const table = document.getElementById("periodic-table");
-        const clue = document.getElementById("clue");
-        const scoreDisplay = document.getElementById("score");
-
-        // Build a simplified periodic table (18 columns, 7 rows)
-        function createTable() {
-            table.innerHTML = "";
-            for (let i = 1; i <= 126; i++) { // 7 rows * 18 columns
-                const cell = document.createElement("div");
-                cell.classList.add("element");
-                if (elements[i]) {
-                    cell.dataset.atomic = i;
-                    cell.textContent = elements[i][0]; // Symbol
-                    cell.addEventListener("click", checkAnswer);
-                } else {
-                    cell.style.backgroundColor = "#eee"; // Empty cells
+        let keys = {};
+        
+        document.addEventListener('keydown', (e) => keys[e.key] = true);
+        document.addEventListener('keyup', (e) => keys[e.key] = false);
+        
+        function update() {
+            if (keys['ArrowUp']) pacman.y -= pacman.speed;
+            if (keys['ArrowDown']) pacman.y += pacman.speed;
+            if (keys['ArrowLeft']) pacman.x -= pacman.speed;
+            if (keys['ArrowRight']) pacman.x += pacman.speed;
+            
+            pacman.x = Math.max(pacman.radius, Math.min(canvas.width - pacman.radius, pacman.x));
+            pacman.y = Math.max(pacman.radius, Math.min(canvas.height - pacman.radius, pacman.y));
+            
+            pacman.mouthAngle += 0.2;
+        }
+        
+        function checkCollisions() {
+            dots = dots.filter(dot => {
+                let dx = pacman.x - dot.x;
+                let dy = pacman.y - dot.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < pacman.radius + dot.radius) {
+                    score += 10;
+                    return false;
                 }
-                table.appendChild(cell);
+                return true;
+            });
+            
+            if (dots.length < 10) {
+                dots.push({
+                    x: Math.random() * 380 + 10,
+                    y: Math.random() * 380 + 10,
+                    radius: 5
+                });
             }
         }
-
-        // Start or reset the game
-        function startGame() {
-            score = 0;
-            scoreDisplay.textContent = `Score: ${score}`;
-            createTable();
-            nextClue();
+        
+        function draw() {
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = 'white';
+            dots.forEach(dot => {
+                ctx.beginPath();
+                ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            ctx.fillStyle = 'yellow';
+            ctx.beginPath();
+            let mouthOpen = Math.abs(Math.sin(pacman.mouthAngle)) * Math.PI / 4;
+            ctx.arc(pacman.x, pacman.y, pacman.radius, mouthOpen, 2 * Math.PI - mouthOpen);
+            ctx.lineTo(pacman.x, pacman.y);
+            ctx.fill();
+            
+            ctx.fillStyle = 'white';
+            ctx.font = '20px Arial';
+            ctx.fillText('Score: ' + score, 10, 30);
         }
-
-        // Display a random clue
-        function nextClue() {
-            const keys = Object.keys(elements);
-            const randomKey = keys[Math.floor(Math.random() * keys.length)];
-            currentElement = elements[randomKey];
-            clue.textContent = `Clue: ${currentElement[2]}`;
+        
+        function gameLoop() {
+            update();
+            checkCollisions();
+            draw();
+            requestAnimationFrame(gameLoop);
         }
-
-        // Check if the clicked element is correct
-        function checkAnswer(event) {
-            const clickedAtomic = parseInt(event.target.dataset.atomic);
-            if (clickedAtomic === currentElement[1]) {
-                event.target.classList.add("correct");
-                score += 10;
-                scoreDisplay.textContent = `Score: ${score}`;
-                clue.textContent = "Correct! Loading next clue...";
-                setTimeout(nextClue, 1000);
-            } else {
-                event.target.classList.add("incorrect");
-                clue.textContent = "Wrong! Try again.";
-                setTimeout(() => {
-                    event.target.classList.remove("incorrect");
-                    clue.textContent = `Clue: ${currentElement[2]}`;
-                }, 1000);
-            }
-        }
-
-        // Initialize the table on page load
-        createTable();
+        
+        gameLoop();
     </script>
 </body>
 </html>
