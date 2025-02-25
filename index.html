@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Periodic Table Treasure Hunt</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+        }
+        #game-container {
+            margin: 20px auto;
+            max-width: 800px;
+        }
+        #periodic-table {
+            display: grid;
+            grid-template-columns: repeat(18, 40px);
+            gap: 2px;
+            margin: 20px auto;
+            width: fit-content;
+        }
+        .element {
+            width: 40px;
+            height: 40px;
+            background-color: #ddd;
+            border: 1px solid #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .element:hover {
+            background-color: #ccc;
+        }
+        .correct {
+            background-color: #aaffaa;
+        }
+        .incorrect {
+            background-color: #ffaaaa;
+        }
+        #clue {
+            font-size: 18px;
+            margin: 20px 0;
+        }
+        #score {
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>Periodic Table Treasure Hunt</h1>
+        <p id="clue">Click "Start Game" to begin!</p>
+        <p id="score">Score: 0</p>
+        <div id="periodic-table"></div>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <script>
+        // Simplified periodic table data (element: [symbol, atomic number, clue])
+        const elements = {
+            1: ["H", 1, "I'm the lightest element and fuel stars."],
+            2: ["He", 2, "I make balloons float."],
+            3: ["Li", 3, "I'm used in batteries and have atomic number 3."],
+            6: ["C", 6, "I'm the basis of all life."],
+            8: ["O", 8, "You breathe me every day."],
+            11: ["Na", 11, "I’m in your table salt."],
+            17: ["Cl", 17, "I pair with sodium to season your food."],
+            26: ["Fe", 26, "I’m the core of steel."],
+            79: ["Au", 79, "I’m a precious metal loved by jewelers."]
+        };
+
+        let score = 0;
+        let currentElement = null;
+        const table = document.getElementById("periodic-table");
+        const clue = document.getElementById("clue");
+        const scoreDisplay = document.getElementById("score");
+
+        // Build a simplified periodic table (18 columns, 7 rows)
+        function createTable() {
+            table.innerHTML = "";
+            for (let i = 1; i <= 126; i++) { // 7 rows * 18 columns
+                const cell = document.createElement("div");
+                cell.classList.add("element");
+                if (elements[i]) {
+                    cell.dataset.atomic = i;
+                    cell.textContent = elements[i][0]; // Symbol
+                    cell.addEventListener("click", checkAnswer);
+                } else {
+                    cell.style.backgroundColor = "#eee"; // Empty cells
+                }
+                table.appendChild(cell);
+            }
+        }
+
+        // Start or reset the game
+        function startGame() {
+            score = 0;
+            scoreDisplay.textContent = `Score: ${score}`;
+            createTable();
+            nextClue();
+        }
+
+        // Display a random clue
+        function nextClue() {
+            const keys = Object.keys(elements);
+            const randomKey = keys[Math.floor(Math.random() * keys.length)];
+            currentElement = elements[randomKey];
+            clue.textContent = `Clue: ${currentElement[2]}`;
+        }
+
+        // Check if the clicked element is correct
+        function checkAnswer(event) {
+            const clickedAtomic = parseInt(event.target.dataset.atomic);
+            if (clickedAtomic === currentElement[1]) {
+                event.target.classList.add("correct");
+                score += 10;
+                scoreDisplay.textContent = `Score: ${score}`;
+                clue.textContent = "Correct! Loading next clue...";
+                setTimeout(nextClue, 1000);
+            } else {
+                event.target.classList.add("incorrect");
+                clue.textContent = "Wrong! Try again.";
+                setTimeout(() => {
+                    event.target.classList.remove("incorrect");
+                    clue.textContent = `Clue: ${currentElement[2]}`;
+                }, 1000);
+            }
+        }
+
+        // Initialize the table on page load
+        createTable();
+    </script>
+</body>
+</html>
